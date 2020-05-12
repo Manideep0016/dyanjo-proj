@@ -58,14 +58,57 @@ def library(request, *args, **kwargs):
 
 
 def get_frame():
-    camera = cv2.VideoCapture(0)
-    while True:
-        _, img = camera.read()
-        imgencode = cv2.imencode('.jpg', img)[1]
-        stringData = imgencode.tostring()
-        yield (b'--frame\r\n'b'Content-Type: text/plain\r\n\r\n' + stringData + b'\r\n')
-    del (camera)
+    cascPath = "users/static/haarcascade_frontalface_default.xml"
+faceCascade = cv2.CascadeClassifier(cascPath)
 
+# Capturing video from webcam
+camera = cv2.VideoCapture(0)
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'H264')
+out = cv2.VideoWriter('D://face-detect/videos/video-saved.mp4', fourcc, 20.0, (640, 480))
+
+# loop runs if capturing has been initialized.
+while True:
+    # Capture frame-by-frame from camera
+    _, img = camera.read()
+
+    # Converts to grayscale space, OCV reads colors as BGR
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    faces = faceCascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30)
+    )
+
+    if (faces is None):
+        print('Failed to detect face')
+        return 0
+
+    # Draw a rectangle around the faces
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    # save video
+    out.write(img)
+    # Display the resulting frame
+    winname = "Video"
+    cv2.imshow(winname, img)
+
+    k = cv2.waitKey(1)
+    # close webcam
+    if k % 256 == 27:
+        # Close the window / Release webcam
+        camera.release()
+        out.release()
+        # De-allocate any associated memory usage
+        cv2.destroyAllWindows()
+        break
+    # save image
+    elif k == ord('s'):
+        cv2.imwrite(filename='D://face-detect/images/saved_img.jpg', img=img)
 
 def indexscreen(request):
     try:
